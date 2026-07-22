@@ -50,16 +50,19 @@ func Register(c *gin.Context) {
 	var family models.Family
 	db := database.DB
 
-	if req.FamilyName != "" {
-		if req.SecretCode == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "El código secreto es obligatorio para crear una familia"})
-			return
-		}
-		
-		var count int64
-		db.Model(&models.Family{}).Where("code = ?", req.SecretCode).Count(&count)
-		if count > 0 {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "El código familiar ya está en uso"})
+	if req.SecretCode == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "El código secreto es obligatorio"})
+		return
+	}
+
+	// Buscar si ya existe la familia con ese código
+	if err := db.Where("code = ?", req.SecretCode).First(&family).Error; err == nil {
+		// ¡El código existe! Nos unimos a la familia existente.
+		// (Ignoramos si puso algo en req.FamilyName)
+	} else {
+		// El código NO existe. Asumimos que quiere crear una familia nueva.
+		if req.FamilyName == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "El código no existe. Si querés crear una familia nueva, escribí un Nombre de Familia."})
 			return
 		}
 
@@ -69,11 +72,6 @@ func Register(c *gin.Context) {
 		}
 		if err := db.Create(&family).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "Error al crear familia"})
-			return
-		}
-	} else {
-		if err := db.Where("code = ?", req.SecretCode).First(&family).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "Código familiar incorrecto o no existe"})
 			return
 		}
 	}
