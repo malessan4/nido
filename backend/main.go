@@ -3,10 +3,12 @@ package main
 import (
 	"log"
 	"nido-backend/controllers"
+	"nido-backend/cron"
 	"nido-backend/database"
 	"nido-backend/middleware"
 	"nido-backend/models"
 	"os"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -19,19 +21,32 @@ func main() {
 		log.Println("No se pudo cargar el archivo .env, se usarán las variables del sistema")
 	}
 
+	// Configurar Zona Horaria (Buenos Aires)
+	loc, err := time.LoadLocation("America/Argentina/Buenos_Aires")
+	if err != nil {
+		log.Println("No se pudo cargar la zona horaria, usando Local por defecto:", err)
+	} else {
+		time.Local = loc
+		log.Println("Zona horaria configurada a:", time.Local.String())
+	}
+
 	// Conectar a la base de datos
 	database.ConnectDB()
 
 	// Auto-Migración: GORM creará/actualizará las tablas automáticamente
-	err := database.DB.AutoMigrate(
+	err = database.DB.AutoMigrate(
 		&models.Family{},
 		&models.User{},
 		&models.Task{},
 		&models.Message{},
+		&models.PushSubscription{},
 	)
 	if err != nil {
 		log.Fatal("Error al migrar la base de datos:", err)
 	}
+
+	// Iniciar CRON de Tareas Vencidas
+	cron.StartScheduler()
 
 	// Configurar router Gin
 	r := gin.Default()
@@ -73,6 +88,12 @@ func main() {
 			{
 				messages.GET("", controllers.GetMessages)
 				messages.POST("/send", controllers.SendMessage)
+			}
+
+			// Notificaciones
+			notifications := protected.Group("/notifications")
+			{
+				notifications.POST("/subscribe", controllers.SubscribeToPush)
 			}
 		}
 	}
