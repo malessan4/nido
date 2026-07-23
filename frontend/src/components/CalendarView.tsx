@@ -22,6 +22,7 @@ export default function CalendarView() {
   const [showForm, setShowForm] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newTime, setNewTime] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => { fetchEvents(); }, []);
 
@@ -35,6 +36,7 @@ export default function CalendarView() {
   const createEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !selectedDay) return;
+    setIsSaving(true);
     const dateStr = format(selectedDay, 'yyyy-MM-dd');
     const start = `${dateStr}T${newTime || '09:00'}:00`;
     const end = `${dateStr}T${newTime || '09:00'}:00`;
@@ -42,7 +44,9 @@ export default function CalendarView() {
       const res = await api.post('/events', { title: newTitle, description: '', startTime: start, endTime: end });
       setEvents(prev => [...prev, res.data]);
       setNewTitle(''); setNewTime(''); setShowForm(false);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); } finally {
+      setIsSaving(false);
+    }
   };
 
   const deleteEvent = async (id: number) => {
@@ -142,8 +146,15 @@ export default function CalendarView() {
                 style={{ border: '1px solid var(--border-glass)' }}
               />
               <div className="flex gap-2">
-                <button type="submit" className="flex-1 py-2 rounded-xl text-white text-xs font-semibold" style={{ background: '#6366f1' }}>Guardar</button>
-                <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 rounded-xl text-t-secondary text-xs bg-glass-1">Cancelar</button>
+                <button type="submit" disabled={isSaving} className="flex-1 py-2 rounded-xl text-white text-xs font-semibold flex items-center justify-center disabled:opacity-70" style={{ background: '#6366f1' }}>
+                  {isSaving ? (
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : 'Guardar'}
+                </button>
+                <button type="button" onClick={() => setShowForm(false)} disabled={isSaving} className="flex-1 py-2 rounded-xl text-t-secondary text-xs bg-glass-1 disabled:opacity-50">Cancelar</button>
               </div>
             </motion.form>
           )}
