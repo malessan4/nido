@@ -26,6 +26,11 @@ func GetMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, messages)
 }
 
+type SendMessageRequest struct {
+	Content        string `json:"content" binding:"required"`
+	SenderUsername string `json:"senderUsername"`
+}
+
 func SendMessage(c *gin.Context) {
 	user, err := getUserFromContext(c)
 	if err != nil {
@@ -33,20 +38,14 @@ func SendMessage(c *gin.Context) {
 		return
 	}
 
-	bodyBytes, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Error al leer el mensaje"})
-		return
-	}
-	content := string(bodyBytes)
-
-	if content == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "El mensaje no puede estar vacío"})
+	var req SendMessageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Mensaje inválido"})
 		return
 	}
 
 	message := models.Message{
-		Content:  content,
+		Content:  req.Content,
 		FamilyID: user.FamilyID,
 		SenderID: user.ID,
 	}
