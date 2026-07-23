@@ -18,9 +18,10 @@ type User struct {
 	Username    string `gorm:"unique;not null" json:"username"`
 	DisplayName string `gorm:"not null" json:"displayName"`
 	Password    string `gorm:"not null" json:"-"`
-	Role        string `gorm:"default:'MEMBER';not null" json:"role"`
-	FamilyID    uint   `gorm:"not null" json:"-"`
-	Family      Family `gorm:"foreignKey:FamilyID" json:"-"`
+	Role        string             `gorm:"default:'MEMBER';not null" json:"role"`
+	FamilyID    uint               `gorm:"not null" json:"-"`
+	Family      Family             `gorm:"foreignKey:FamilyID" json:"-"`
+	PushTokens  []PushSubscription `gorm:"foreignKey:UserID" json:"-"`
 }
 
 type Task struct {
@@ -45,4 +46,12 @@ type Message struct {
 	Family    Family    `gorm:"foreignKey:FamilyID" json:"-"`
 	SenderID  uint      `gorm:"not null" json:"-"`
 	Sender    User      `gorm:"foreignKey:SenderID" json:"sender"`
+}
+
+type PushSubscription struct {
+	ID       uint   `gorm:"primaryKey" json:"id"`
+	UserID   uint   `gorm:"not null" json:"userId"`
+	Endpoint string `gorm:"unique;not null" json:"endpoint"`
+	P256dh   string `gorm:"not null" json:"p256dh"`
+	Auth     string `gorm:"not null" json:"auth"`
 }
