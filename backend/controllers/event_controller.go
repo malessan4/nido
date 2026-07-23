@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"nido-backend/database"
 	"nido-backend/models"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,40 +41,34 @@ func CreateEvent(c *gin.Context) {
 		return
 	}
 
-	// Como startTime y endTime vienen como string desde el Frontend (YYYY-MM-DDTHH:MM:SS),
-	// los guardamos directamente mapeando usando json en el struct local y luego copiando
-	// o convirtiendo a time.Time. Como el Request viene en formato ISO, GORM lo parsea directo.
+	// Frontend sends format like: "2026-07-22T09:00:00"
+	layout := "2006-01-02T15:04:05"
+	startTime, err := time.ParseInLocation(layout, req.StartTime, time.Local)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Formato de startTime inválido"})
+		return
+	}
+
+	endTime, err := time.ParseInLocation(layout, req.EndTime, time.Local)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Formato de endTime inválido"})
+		return
+	}
 
 	event := models.Event{
 		Title:       req.Title,
 		Description: req.Description,
+		StartTime:   startTime,
+		EndTime:     endTime,
 		FamilyID:    user.FamilyID,
 	}
 
-	// Parche rápido para guardar el struct directamente
-	// (Usaremos raw binding para evitar problemas de parseo manual de fechas)
-	var rawEvent struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		StartTime   string `json:"startTime"`
-		EndTime     string `json:"endTime"`
-	}
-	
-	if err := c.ShouldBindJSON(&rawEvent); err == nil {
-		// Lo hacemos con map a la BD para no lidiar con conversiones manuales en este ejemplo
-	}
-
-	// Mejor: Gorm parsea automáticamente si usamos una variable con el modelo real
-	var eventModel models.Event
-	if err := c.ShouldBindJSON(&eventModel); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Error de fecha"})
+	if err := database.DB.Create(&event).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al guardar el evento"})
 		return
 	}
-	
-	eventModel.FamilyID = user.FamilyID
 
-	database.DB.Create(&eventModel)
-	c.JSON(http.StatusCreated, eventModel)
+	c.JSON(http.StatusCreated, event)
 }
 
 func DeleteEvent(c *gin.Context) {
