@@ -8,6 +8,7 @@ import KanbanBoard from '@/components/KanbanBoard';
 import CalendarView from '@/components/CalendarView';
 import ChatView from '@/components/ChatView';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { subscribeToPushNotifications } from '@/lib/push';
 
 const tabs = [
   { id: 'kanban', label: 'Tareas', icon: CheckSquare },
@@ -32,6 +33,9 @@ export default function DashboardPage() {
     setDisplayName(localStorage.getItem('displayName') || localStorage.getItem('username') || 'Usuario');
     setFamilyName(localStorage.getItem('familyName') || 'Mi Familia');
     setFamilyCode(localStorage.getItem('familyCode') || '');
+    
+    // Iniciar suscripción a Notificaciones Push
+    subscribeToPushNotifications();
   }, [router]);
 
   const handleLogout = () => {
