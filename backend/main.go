@@ -39,6 +39,7 @@ func main() {
 		&models.User{},
 		&models.Task{},
 		&models.Message{},
+		&models.Event{},
 		&models.PushSubscription{},
 	)
 	if err != nil {
@@ -88,6 +89,14 @@ func main() {
 			{
 				messages.GET("", controllers.GetMessages)
 				messages.POST("/send", controllers.SendMessage)
+			}
+
+			// Eventos (Calendario)
+			events := protected.Group("/events")
+			{
+				events.GET("", controllers.GetEvents)
+				events.POST("", controllers.CreateEvent)
+				events.DELETE("/:id", controllers.DeleteEvent)
 			}
 
 			// Notificaciones
