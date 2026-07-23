@@ -11,6 +11,7 @@ type Family struct {
 	Users    []User    `gorm:"foreignKey:FamilyID" json:"-"`
 	Tasks    []Task    `gorm:"foreignKey:FamilyID" json:"-"`
 	Messages []Message `gorm:"foreignKey:FamilyID" json:"-"`
+	Events   []Event   `gorm:"foreignKey:FamilyID" json:"-"`
 }
 
 type User struct {
@@ -54,4 +55,14 @@ type PushSubscription struct {
 	Endpoint string `gorm:"unique;not null" json:"endpoint"`
 	P256dh   string `gorm:"not null" json:"p256dh"`
 	Auth     string `gorm:"not null" json:"auth"`
+}
+
+type Event struct {
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	Title       string    `gorm:"not null" json:"title"`
+	Description string    `gorm:"type:text" json:"description"`
+	StartTime   time.Time `gorm:"not null" json:"startTime"`
+	EndTime     time.Time `gorm:"not null" json:"endTime"`
+	FamilyID    uint      `gorm:"not null" json:"-"`
+	Family      Family    `gorm:"foreignKey:FamilyID" json:"-"`
 }
