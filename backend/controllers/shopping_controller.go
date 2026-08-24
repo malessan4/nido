@@ -74,6 +74,33 @@ func ToggleShoppingItem(c *gin.Context) {
 	c.JSON(http.StatusOK, item)
 }
 
+func UpdateShoppingItem(c *gin.Context) {
+	user, err := getUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuario no encontrado"})
+		return
+	}
+
+	itemId := c.Param("id")
+	var item models.ShoppingItem
+
+	if err := database.DB.Where("id = ? AND family_id = ?", itemId, user.FamilyID).First(&item).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Ítem no encontrado"})
+		return
+	}
+
+	var req CreateShoppingItemRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
+		return
+	}
+
+	item.Name = req.Name
+	database.DB.Save(&item)
+
+	c.JSON(http.StatusOK, item)
+}
+
 func DeleteShoppingItem(c *gin.Context) {
 	user, err := getUserFromContext(c)
 	if err != nil {
