@@ -41,6 +41,7 @@ func main() {
 		&models.Message{},
 		&models.Event{},
 		&models.PushSubscription{},
+		&models.ShoppingItem{},
 	)
 	if err != nil {
 		log.Fatal("Error al migrar la base de datos:", err)
@@ -103,6 +104,15 @@ func main() {
 			notifications := protected.Group("/notifications")
 			{
 				notifications.POST("/subscribe", controllers.SubscribeToPush)
+			}
+
+			// Lista de Compras
+			shopping := protected.Group("/shopping")
+			{
+				shopping.GET("", controllers.GetShoppingItems)
+				shopping.POST("", controllers.CreateShoppingItem)
+				shopping.PATCH("/:id/toggle", controllers.ToggleShoppingItem)
+				shopping.DELETE("/:id", controllers.DeleteShoppingItem)
 			}
 		}
 	}
