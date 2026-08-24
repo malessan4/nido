@@ -53,6 +53,34 @@ func CreateNote(c *gin.Context) {
 	c.JSON(http.StatusCreated, note)
 }
 
+func UpdateNote(c *gin.Context) {
+	user, err := getUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuario no encontrado"})
+		return
+	}
+
+	noteId := c.Param("id")
+	var note models.Note
+
+	if err := database.DB.Where("id = ? AND family_id = ?", noteId, user.FamilyID).First(&note).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Nota no encontrada"})
+		return
+	}
+
+	var req CreateNoteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
+		return
+	}
+
+	note.Title = req.Title
+	note.Content = req.Content
+	database.DB.Save(&note)
+
+	c.JSON(http.StatusOK, note)
+}
+
 func DeleteNote(c *gin.Context) {
 	user, err := getUserFromContext(c)
 	if err != nil {
