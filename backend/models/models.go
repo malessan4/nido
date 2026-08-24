@@ -13,6 +13,7 @@ type Family struct {
 	Messages      []Message      `gorm:"foreignKey:FamilyID" json:"-"`
 	Events        []Event        `gorm:"foreignKey:FamilyID" json:"-"`
 	ShoppingItems []ShoppingItem `gorm:"foreignKey:FamilyID" json:"-"`
+	Notes         []Note         `gorm:"foreignKey:FamilyID" json:"-"`
 }
 
 type User struct {
@@ -74,4 +75,13 @@ type ShoppingItem struct {
 	IsCompleted bool   `gorm:"default:false;not null" json:"isCompleted"`
 	FamilyID    uint   `gorm:"not null" json:"-"`
 	Family      Family `gorm:"foreignKey:FamilyID" json:"-"`
+}
+
+type Note struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	Title     string    `gorm:"not null" json:"title"`
+	Content   string    `gorm:"type:text;not null" json:"content"`
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"createdAt"`
+	FamilyID  uint      `gorm:"not null" json:"-"`
+	Family    Family    `gorm:"foreignKey:FamilyID" json:"-"`
 }
