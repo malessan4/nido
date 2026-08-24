@@ -16,6 +16,9 @@ export default function ShoppingListView() {
   const [newItemName, setNewItemName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
+
   useEffect(() => {
     fetchItems();
   }, []);
@@ -44,6 +47,24 @@ export default function ShoppingListView() {
     }
   };
 
+  const saveEdit = async (id: number) => {
+    if (!editName.trim()) {
+      setEditingId(null);
+      return;
+    }
+    
+    // Optimistic
+    setItems(items.map(item => item.id === id ? { ...item, name: editName } : item));
+    setEditingId(null);
+
+    try {
+      await api.put(`/shopping/${id}`, { name: editName });
+    } catch (error) {
+      console.error('Error updating item:', error);
+      fetchItems();
+    }
+  };
+
   const toggleItem = async (id: number) => {
     // Optimistic update
     setItems(items.map(item => 
@@ -69,7 +90,6 @@ export default function ShoppingListView() {
   };
 
   const activeItems = items.filter(item => !item.isCompleted);
-  const completedItems = items.filter(item => item.isCompleted);
 
   return (
     <div className="flex flex-col h-[calc(100vh-180px)] rounded-2xl overflow-hidden bg-glass-1"
@@ -142,16 +162,34 @@ export default function ShoppingListView() {
                 </button>
 
                 {/* Name */}
-                <span 
-                  onClick={() => toggleItem(item.id)}
-                  className={`flex-1 text-sm font-medium cursor-pointer select-none transition-all ${
-                    item.isCompleted ? 'line-through text-t-muted' : 'text-t-primary'
-                  }`}
-                >
-                  {item.name}
-                </span>
+                {editingId === item.id ? (
+                  <input 
+                    type="text"
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    onBlur={() => saveEdit(item.id)}
+                    onKeyDown={e => e.key === 'Enter' && saveEdit(item.id)}
+                    className="flex-1 px-2 py-1 rounded bg-glass-2 text-t-primary text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    autoFocus
+                  />
+                ) : (
+                  <span 
+                    onClick={() => toggleItem(item.id)}
+                    className={`flex-1 text-sm font-medium cursor-pointer select-none transition-all ${
+                      item.isCompleted ? 'line-through text-t-muted' : 'text-t-primary'
+                    }`}
+                  >
+                    {item.name}
+                  </span>
+                )}
 
-                {/* Delete button */}
+                {/* Edit & Delete buttons */}
+                <button
+                  onClick={() => { setEditingId(item.id); setEditName(item.name); }}
+                  className="opacity-0 group-hover:opacity-100 p-2 text-t-muted hover:text-indigo-500 transition-all focus:opacity-100"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                </button>
                 <button
                   onClick={() => deleteItem(item.id)}
                   className="opacity-0 group-hover:opacity-100 p-2 text-t-muted hover:text-red-500 transition-all focus:opacity-100"
