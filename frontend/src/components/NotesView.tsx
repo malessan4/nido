@@ -19,6 +19,8 @@ export default function NotesView() {
   const [content, setContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const [editingId, setEditingId] = useState<number | null>(null);
+
   useEffect(() => {
     fetchNotes();
   }, []);
@@ -36,17 +38,49 @@ export default function NotesView() {
     e.preventDefault();
     if (!title.trim() || !content.trim() || isLoading) return;
     setIsLoading(true);
-    try {
-      const res = await api.post('/notes', { title, content });
-      setNotes([res.data, ...notes]);
-      setTitle('');
-      setContent('');
-      setShowForm(false);
-    } catch (error) {
-      console.error('Error adding note:', error);
-    } finally {
-      setIsLoading(false);
+    
+    if (editingId) {
+      // Editar
+      try {
+        const res = await api.put(`/notes/${editingId}`, { title, content });
+        setNotes(notes.map(n => n.id === editingId ? res.data : n));
+        setTitle('');
+        setContent('');
+        setShowForm(false);
+        setEditingId(null);
+      } catch (error) {
+        console.error('Error updating note:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // Crear nuevo
+      try {
+        const res = await api.post('/notes', { title, content });
+        setNotes([res.data, ...notes]);
+        setTitle('');
+        setContent('');
+        setShowForm(false);
+      } catch (error) {
+        console.error('Error adding note:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
+  };
+
+  const startEdit = (note: Note) => {
+    setEditingId(note.id);
+    setTitle(note.title);
+    setContent(note.content);
+    setShowForm(true);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setTitle('');
+    setContent('');
+    setShowForm(false);
   };
 
   const deleteNote = async (id: number) => {
@@ -76,7 +110,10 @@ export default function NotesView() {
           </div>
         </div>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            if (showForm) cancelEdit();
+            else setShowForm(true);
+          }}
           className="p-2 rounded-xl text-white transition-all hover:scale-110"
           style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}
         >
@@ -86,7 +123,7 @@ export default function NotesView() {
 
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
         
-        {/* Formulario para agregar */}
+        {/* Formulario para agregar/editar */}
         <AnimatePresence>
           {showForm && (
             <motion.form
@@ -109,17 +146,28 @@ export default function NotesView() {
                 placeholder="Escribí la información importante acá..."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                rows={3}
-                className="px-4 py-2 rounded-lg text-t-primary placeholder-t-muted text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-glass-1 resize-none"
+                rows={5}
+                className="px-4 py-2 rounded-lg text-t-primary placeholder-t-muted text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-glass-1 resize-y"
               />
-              <button
-                type="submit"
-                disabled={!title.trim() || !content.trim() || isLoading}
-                className="py-2 rounded-lg text-white text-sm font-bold transition-all disabled:opacity-50"
-                style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}
-              >
-                {isLoading ? 'Guardando...' : 'Pegar Nota'}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={!title.trim() || !content.trim() || isLoading}
+                  className="flex-1 py-2 rounded-lg text-white text-sm font-bold transition-all disabled:opacity-50"
+                  style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}
+                >
+                  {isLoading ? 'Guardando...' : (editingId ? 'Actualizar Nota' : 'Pegar Nota')}
+                </button>
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={cancelEdit}
+                    className="flex-1 py-2 rounded-lg text-t-secondary text-sm bg-glass-1 transition-all"
+                  >
+                    Cancelar
+                  </button>
+                )}
+              </div>
             </motion.form>
           )}
         </AnimatePresence>
@@ -145,16 +193,24 @@ export default function NotesView() {
                     border: '1px solid rgba(245, 158, 11, 0.2)' 
                   }}
                 >
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start pr-12">
                     <h3 className="font-bold text-t-primary text-sm">{note.title}</h3>
-                    <button
-                      onClick={() => deleteNote(note.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-t-muted hover:text-red-500 transition-all absolute top-2 right-2"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                      <button
+                        onClick={() => startEdit(note)}
+                        className="p-1 text-t-muted hover:text-indigo-500 transition-all"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                      </button>
+                      <button
+                        onClick={() => deleteNote(note.id)}
+                        className="p-1 text-t-muted hover:text-red-500 transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-sm text-t-secondary whitespace-pre-wrap leading-relaxed">
+                  <p className="text-sm text-t-secondary whitespace-pre-wrap leading-relaxed mt-1">
                     {note.content}
                   </p>
                 </motion.div>
