@@ -3,16 +3,18 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckSquare, Calendar, MessageCircle, LogOut, Users, Menu, Copy, Check } from 'lucide-react';
+import { CheckSquare, Calendar, MessageCircle, LogOut, Users, Menu, Copy, Check, ShoppingCart } from 'lucide-react';
 import KanbanBoard from '@/components/KanbanBoard';
 import CalendarView from '@/components/CalendarView';
 import ChatView from '@/components/ChatView';
+import ShoppingListView from '@/components/ShoppingListView';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { subscribeToPushNotifications } from '@/lib/push';
 
 const tabs = [
   { id: 'kanban', label: 'Tareas', icon: CheckSquare },
   { id: 'calendar', label: 'Agenda', icon: Calendar },
+  { id: 'shopping', label: 'Compras', icon: ShoppingCart },
   { id: 'chat', label: 'Chat', icon: MessageCircle },
 ];
 
@@ -181,6 +183,7 @@ export default function DashboardPage() {
             >
               {activeTab === 'kanban' && <KanbanBoard />}
               {activeTab === 'calendar' && <CalendarView />}
+              {activeTab === 'shopping' && <ShoppingListView />}
               {activeTab === 'chat' && <ChatView username={username} displayName={displayName} />}
             </motion.div>
           </AnimatePresence>
