@@ -112,6 +112,7 @@ func main() {
 			{
 				shopping.GET("", controllers.GetShoppingItems)
 				shopping.POST("", controllers.CreateShoppingItem)
+				shopping.PUT("/:id", controllers.UpdateShoppingItem)
 				shopping.PATCH("/:id/toggle", controllers.ToggleShoppingItem)
 				shopping.DELETE("/:id", controllers.DeleteShoppingItem)
 			}
@@ -121,6 +122,7 @@ func main() {
 			{
 				notes.GET("", controllers.GetNotes)
 				notes.POST("", controllers.CreateNote)
+				notes.PUT("/:id", controllers.UpdateNote)
 				notes.DELETE("/:id", controllers.DeleteNote)
 			}
 		}
