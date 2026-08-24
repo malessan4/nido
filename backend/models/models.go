@@ -9,9 +9,10 @@ type Family struct {
 	Code     string    `gorm:"unique;not null" json:"code"`
 	Name     string    `gorm:"not null" json:"name"`
 	Users    []User    `gorm:"foreignKey:FamilyID" json:"-"`
-	Tasks    []Task    `gorm:"foreignKey:FamilyID" json:"-"`
-	Messages []Message `gorm:"foreignKey:FamilyID" json:"-"`
-	Events   []Event   `gorm:"foreignKey:FamilyID" json:"-"`
+	Tasks         []Task         `gorm:"foreignKey:FamilyID" json:"-"`
+	Messages      []Message      `gorm:"foreignKey:FamilyID" json:"-"`
+	Events        []Event        `gorm:"foreignKey:FamilyID" json:"-"`
+	ShoppingItems []ShoppingItem `gorm:"foreignKey:FamilyID" json:"-"`
 }
 
 type User struct {
@@ -65,4 +66,12 @@ type Event struct {
 	EndTime     time.Time `gorm:"not null" json:"endTime"`
 	FamilyID    uint      `gorm:"not null" json:"-"`
 	Family      Family    `gorm:"foreignKey:FamilyID" json:"-"`
+}
+
+type ShoppingItem struct {
+	ID          uint   `gorm:"primaryKey" json:"id"`
+	Name        string `gorm:"not null" json:"name"`
+	IsCompleted bool   `gorm:"default:false;not null" json:"isCompleted"`
+	FamilyID    uint   `gorm:"not null" json:"-"`
+	Family      Family `gorm:"foreignKey:FamilyID" json:"-"`
 }
