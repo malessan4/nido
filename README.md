@@ -1,4 +1,4 @@
-<parameter name="CodeContent"><![CDATA[<div align="center">
+<parameter name="CodeContent"><div align="center">
 
 # 🏠 Nido
 ### Organizador Familiar Full Stack
@@ -159,11 +159,11 @@ La app es instalable como una Progressive Web App. En Android o iOS, al entrar a
 
 ## 👨‍💻 Autor
 
-**Mati** — [@malessan4](https://github.com/malessan4)
+**Matias Alessandrello** — [@malessan4](https://github.com/malessan4)
 
 ---
 
 <div align="center">
 Hecho con ❤️ para organizar el hogar familiar
 </div>
-]]>
+
