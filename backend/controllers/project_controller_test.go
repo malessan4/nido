@@ -31,6 +31,7 @@ func TestRegisterProjectRoutesNoPanic(t *testing.T) {
 		"PUT /api/projects/:id/stages/:stageId":     false,
 		"DELETE /api/projects/:id/stages/:stageId":  false,
 		"POST /api/projects/:id/stages/:stageId/tasks": false,
+		"PATCH /api/projects/:id/stages/:stageId/reorder-tasks": false,
 		"PUT /api/projects/:id/tasks/:taskId":       false,
 		"PATCH /api/projects/:id/tasks/:taskId/toggle": false,
 		"DELETE /api/projects/:id/tasks/:taskId":    false,

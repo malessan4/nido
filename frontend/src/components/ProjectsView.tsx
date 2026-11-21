@@ -379,6 +379,7 @@ function StageCard({
   onTaskInputChange,
   onCreateTask,
   onToggleTask,
+  onMoveTask,
   onSaveTaskTitle,
   onDeleteTask,
 }: {
@@ -397,6 +398,7 @@ function StageCard({
   onTaskInputChange: (val: string) => void;
   onCreateTask: (e: React.FormEvent) => void;
   onToggleTask: (task: ProjectTask) => void;
+  onMoveTask: (taskIndex: number, direction: -1 | 1) => void;
   onSaveTaskTitle: (task: ProjectTask, newTitle: string) => void;
   onDeleteTask: (taskId: number) => void;
 }) {
@@ -582,12 +584,13 @@ function StageCard({
                 </p>
               ) : (
                 <div className="space-y-1.5">
-                  {stage.tasks.map((task) => {
+                  {stage.tasks.map((task, taskIdx) => {
                     const isEditing = editingTaskId === task.id;
                     return (
-                      <div
+                      <motion.div
                         key={task.id}
-                        className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                        layout="position"
+                        className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
                           task.isCompleted ? 'bg-glass-2/70 opacity-75' : 'bg-glass-2'
                         }`}
                         style={{ border: '1px solid var(--border-glass)' }}
@@ -656,8 +659,28 @@ function StageCard({
                           </div>
                         )}
 
-                        {/* Botones de editar y borrar tarea */}
+                        {/* Botones de reordenar, editar y borrar tarea */}
                         <div className="flex items-center gap-0.5 shrink-0 opacity-80 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            disabled={taskIdx === 0}
+                            onClick={() => onMoveTask(taskIdx, -1)}
+                            className="p-1.5 rounded-lg text-t-muted hover:text-t-primary hover:bg-glass-1 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                            title="Subir tarea"
+                            aria-label={`Subir ${task.title}`}
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={taskIdx === stage.tasks.length - 1}
+                            onClick={() => onMoveTask(taskIdx, 1)}
+                            className="p-1.5 rounded-lg text-t-muted hover:text-t-primary hover:bg-glass-1 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                            title="Bajar tarea"
+                            aria-label={`Bajar ${task.title}`}
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
                           <button
                             type="button"
                             onClick={() => {
@@ -678,7 +701,7 @@ function StageCard({
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>
@@ -1364,6 +1387,38 @@ export default function ProjectsView() {
     }
   };
 
+  const handleMoveTask = async (
+    projectId: number,
+    stage: ProjectStage,
+    taskIndex: number,
+    direction: -1 | 1
+  ) => {
+    const targetIndex = taskIndex + direction;
+    if (targetIndex < 0 || targetIndex >= stage.tasks.length) return;
+
+    const reordered = [...stage.tasks];
+    const [moved] = reordered.splice(taskIndex, 1);
+    reordered.splice(targetIndex, 0, moved);
+    const updatedTasks = reordered.map((task, idx) => ({ ...task, position: idx }));
+
+    updateProjectInState(projectId, (proj) => ({
+      ...proj,
+      stages: proj.stages.map((s) =>
+        s.id === stage.id ? { ...s, tasks: updatedTasks } : s
+      ),
+    }));
+
+    try {
+      await api.patch(`/projects/${projectId}/stages/${stage.id}/reorder-tasks`, {
+        taskIds: updatedTasks.map((t) => t.id),
+      });
+    } catch (error) {
+      console.error('Error reordering tasks:', error);
+      setErrorMsg('No se pudo guardar el nuevo orden de las tareas.');
+      fetchProjects();
+    }
+  };
+
   // ─── Derivados ───────────────────────────────────────────────────────────────
   const selectedProject = projects.find((p) => p.id === selectedProjectId) ?? null;
 
@@ -1429,6 +1484,9 @@ export default function ProjectsView() {
           }
           onCreateTask={(e, stageId) => handleCreateTask(e, selectedProject.id, stageId)}
           onToggleTask={(stageId, task) => handleToggleTask(selectedProject.id, stageId, task)}
+          onMoveTask={(stage, taskIndex, dir) =>
+            handleMoveTask(selectedProject.id, stage, taskIndex, dir)
+          }
           onSaveTaskTitle={(stageId, task, title) =>
             handleRenameTask(selectedProject.id, stageId, task, title)
           }
@@ -1637,6 +1695,7 @@ function ProjectDetailView({
   onTaskInputChange,
   onCreateTask,
   onToggleTask,
+  onMoveTask,
   onSaveTaskTitle,
   onDeleteTask,
   onNewStageTitleChange,
@@ -1660,6 +1719,7 @@ function ProjectDetailView({
   onTaskInputChange: (stageId: number, val: string) => void;
   onCreateTask: (e: React.FormEvent, stageId: number) => void;
   onToggleTask: (stageId: number, task: ProjectTask) => void;
+  onMoveTask: (stage: ProjectStage, taskIndex: number, dir: -1 | 1) => void;
   onSaveTaskTitle: (stageId: number, task: ProjectTask, title: string) => void;
   onDeleteTask: (stageId: number, taskId: number) => void;
   onNewStageTitleChange: (val: string) => void;
@@ -1836,6 +1896,7 @@ function ProjectDetailView({
               onTaskInputChange={(val) => onTaskInputChange(stage.id, val)}
               onCreateTask={(e) => onCreateTask(e, stage.id)}
               onToggleTask={(task) => onToggleTask(stage.id, task)}
+              onMoveTask={(taskIndex, dir) => onMoveTask(stage, taskIndex, dir)}
               onSaveTaskTitle={(task, title) => onSaveTaskTitle(stage.id, task, title)}
               onDeleteTask={(taskId) => onDeleteTask(stage.id, taskId)}
             />

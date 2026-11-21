@@ -27,6 +27,7 @@ func RegisterProjectRoutes(protected *gin.RouterGroup) {
 		projects.PUT("/:id/stages/:stageId", UpdateProjectStage)
 		projects.DELETE("/:id/stages/:stageId", DeleteProjectStage)
 		projects.POST("/:id/stages/:stageId/tasks", CreateProjectTask)
+		projects.PATCH("/:id/stages/:stageId/reorder-tasks", ReorderProjectTasks)
 		projects.PUT("/:id/tasks/:taskId", UpdateProjectTask)
 		projects.PATCH("/:id/tasks/:taskId/toggle", ToggleProjectTask)
 		projects.DELETE("/:id/tasks/:taskId", DeleteProjectTask)
@@ -415,6 +416,19 @@ func UpdateProjectStage(c *gin.Context) {
 	c.JSON(http.StatusOK, stage)
 }
 
+func reorderPositions(model any, parentColumn string, parentID uint, ids []uint) error {
+	return database.DB.Transaction(func(tx *gorm.DB) error {
+		for idx, itemID := range ids {
+			if err := tx.Model(model).
+				Where("id = ? AND "+parentColumn+" = ?", itemID, parentID).
+				Update("position", idx).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 type ReorderStagesRequest struct {
 	StageIDs []uint `json:"stageIds" binding:"required"`
 }
@@ -438,17 +452,7 @@ func ReorderProjectStages(c *gin.Context) {
 		return
 	}
 
-	err = database.DB.Transaction(func(tx *gorm.DB) error {
-		for idx, stageID := range req.StageIDs {
-			if err := tx.Model(&models.ProjectStage{}).
-				Where("id = ? AND project_id = ?", stageID, project.ID).
-				Update("position", idx).Error; err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
+	if err := reorderPositions(&models.ProjectStage{}, "project_id", project.ID, req.StageIDs); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al reordenar etapas"})
 		return
 	}
@@ -614,4 +618,35 @@ func DeleteProjectTask(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+type ReorderTasksRequest struct {
+	TaskIDs []uint `json:"taskIds" binding:"required"`
+}
+
+func ReorderProjectTasks(c *gin.Context) {
+	user, err := getUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Usuario no encontrado"})
+		return
+	}
+
+	stage, err := findFamilyStage(c.Param("id"), c.Param("stageId"), user.FamilyID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Etapa no encontrada"})
+		return
+	}
+
+	var req ReorderTasksRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
+		return
+	}
+
+	if err := reorderPositions(&models.ProjectTask{}, "stage_id", stage.ID, req.TaskIDs); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al reordenar tareas"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
