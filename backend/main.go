@@ -43,6 +43,9 @@ func main() {
 		&models.PushSubscription{},
 		&models.ShoppingItem{},
 		&models.Note{},
+		&models.Project{},
+		&models.ProjectStage{},
+		&models.ProjectTask{},
 	)
 	if err != nil {
 		log.Fatal("Error al migrar la base de datos:", err)
@@ -125,6 +128,9 @@ func main() {
 				notes.PUT("/:id", controllers.UpdateNote)
 				notes.DELETE("/:id", controllers.DeleteNote)
 			}
+
+			// Proyectos por etapas
+			controllers.RegisterProjectRoutes(protected)
 		}
 	}
 

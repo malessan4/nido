@@ -14,6 +14,7 @@ type Family struct {
 	Events        []Event        `gorm:"foreignKey:FamilyID" json:"-"`
 	ShoppingItems []ShoppingItem `gorm:"foreignKey:FamilyID" json:"-"`
 	Notes         []Note         `gorm:"foreignKey:FamilyID" json:"-"`
+	Projects      []Project      `gorm:"foreignKey:FamilyID" json:"-"`
 }
 
 type User struct {
@@ -84,4 +85,36 @@ type Note struct {
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"createdAt"`
 	FamilyID  uint      `gorm:"not null" json:"-"`
 	Family    Family    `gorm:"foreignKey:FamilyID" json:"-"`
+}
+
+type Project struct {
+	ID            uint           `gorm:"primaryKey" json:"id"`
+	Title         string         `gorm:"not null" json:"title"`
+	Description   string         `gorm:"type:text" json:"description"`
+	Color         string         `gorm:"default:'#6366f1';not null" json:"color"`
+	DueDate       *string        `gorm:"type:date" json:"dueDate"`
+	CreatedByName string         `gorm:"not null" json:"createdByName"`
+	CreatedAt     time.Time      `gorm:"autoCreateTime" json:"createdAt"`
+	FamilyID      uint           `gorm:"not null" json:"-"`
+	Family        Family         `gorm:"foreignKey:FamilyID" json:"-"`
+	Stages        []ProjectStage `gorm:"foreignKey:ProjectID;constraint:OnDelete:CASCADE;" json:"stages"`
+}
+
+type ProjectStage struct {
+	ID        uint          `gorm:"primaryKey" json:"id"`
+	ProjectID uint          `gorm:"not null;index" json:"projectId"`
+	Title     string        `gorm:"not null" json:"title"`
+	Position  int           `gorm:"default:0;not null" json:"position"`
+	CreatedAt time.Time     `gorm:"autoCreateTime" json:"createdAt"`
+	Tasks     []ProjectTask `gorm:"foreignKey:StageID;constraint:OnDelete:CASCADE;" json:"tasks"`
+}
+
+type ProjectTask struct {
+	ID              uint      `gorm:"primaryKey" json:"id"`
+	StageID         uint      `gorm:"not null;index" json:"stageId"`
+	Title           string    `gorm:"not null" json:"title"`
+	IsCompleted     bool      `gorm:"default:false;not null" json:"isCompleted"`
+	CompletedByName string    `json:"completedByName"`
+	Position        int       `gorm:"default:0;not null" json:"position"`
+	CreatedAt       time.Time `gorm:"autoCreateTime" json:"createdAt"`
 }

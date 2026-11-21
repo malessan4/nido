@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckSquare, Calendar, MessageCircle, LogOut, Users, Menu, Copy, Check, ShoppingCart, StickyNote } from 'lucide-react';
+import { CheckSquare, Calendar, MessageCircle, LogOut, Users, Menu, Copy, Check, ShoppingCart, StickyNote, Layers } from 'lucide-react';
 import KanbanBoard from '@/components/KanbanBoard';
+import ProjectsView from '@/components/ProjectsView';
 import CalendarView from '@/components/CalendarView';
 import ChatView from '@/components/ChatView';
 import ShoppingListView from '@/components/ShoppingListView';
@@ -14,6 +15,7 @@ import { subscribeToPushNotifications } from '@/lib/push';
 
 const tabs = [
   { id: 'kanban', label: 'Tareas', icon: CheckSquare },
+  { id: 'projects', label: 'Proyectos', icon: Layers },
   { id: 'calendar', label: 'Agenda', icon: Calendar },
   { id: 'shopping', label: 'Compras', icon: ShoppingCart },
   { id: 'notes', label: 'Notas', icon: StickyNote },
@@ -184,6 +186,7 @@ export default function DashboardPage() {
               transition={{ duration: 0.2 }}
             >
               {activeTab === 'kanban' && <KanbanBoard />}
+              {activeTab === 'projects' && <ProjectsView />}
               {activeTab === 'calendar' && <CalendarView />}
               {activeTab === 'shopping' && <ShoppingListView />}
               {activeTab === 'notes' && <NotesView />}
@@ -193,18 +196,18 @@ export default function DashboardPage() {
         </main>
 
         {/* Bottom Navigation (Mobile) */}
-        <nav className="lg:hidden absolute bottom-0 left-0 right-0 bg-glass-1 border-t flex items-center justify-around pb-safe pt-2 px-2"
+        <nav className="lg:hidden absolute bottom-0 left-0 right-0 bg-glass-1 border-t flex items-center justify-around pb-safe pt-2 px-1"
           style={{ borderColor: 'var(--border-glass)', backdropFilter: 'blur(20px)', zIndex: 40 }}>
           {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setActiveTab(id)}
-              className={`flex-1 flex flex-col items-center justify-center py-2 gap-1 rounded-xl transition-all ${
+              className={`flex-1 min-w-0 px-0.5 flex flex-col items-center justify-center py-2 gap-1 rounded-xl transition-all ${
                 activeTab === id ? 'text-indigo-500' : 'text-t-muted hover:text-t-primary'
               }`}
             >
-              <Icon className={`w-6 h-6 transition-transform ${activeTab === id ? 'scale-110' : ''}`} />
-              <span className="text-[10px] font-medium">{label}</span>
+              <Icon className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform ${activeTab === id ? 'scale-110' : ''}`} />
+              <span className="text-[10px] font-medium truncate max-w-full">{label}</span>
             </button>
           ))}
         </nav>
